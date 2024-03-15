@@ -1,9 +1,14 @@
+from pprint import pprint
+
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
+from reportlab.platypus import Table, TableStyle
 from reportlab.lib.units import cm
+from reportlab.pdfbase.ttfonts import TTFont
 from typing import List, Tuple, Optional
+
+from reportlab.platypus import SimpleDocTemplate
 
 font_name = 'Arial'
 
@@ -12,32 +17,27 @@ pdfmetrics.registerFont(TTFont(font_name, 'C:\\Windows\\Fonts\\ARIALN.TTF'))
 
 
 def create_pdf(output_filename: str, personal_data: List[Tuple[str, str]], image_path: Optional[str] = None) -> None:
-    # Создаем объект canvas для рисования PDF
-    c = canvas.Canvas(output_filename, pagesize=A4)
+    pdf = SimpleDocTemplate(output_filename, pagesize=A4)
+    flowables = []
 
-    # Заголовок, выравнивание по центру
-    c.setFont(font_name, 14)
-    c.drawCentredString(10.5 * cm, 29 * cm, "Личный лист")
+    table = Table(personal_data, colWidths=[4 * cm, 4 * cm, 4 * cm], rowHeights=2 * cm)
 
-    # Таблица данных
-    c.setFont(font_name, 12)
-    table_top = 27 * cm
-    for index, (label, value) in enumerate(personal_data):
-        c.drawString(2 * cm, table_top - index * 1 * cm, f"{label}: {value}")
+    # Стилизация таблицы
+    style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), font_name),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ])
 
-    # Место для фотографии
-    c.rect(16 * cm, table_top - 1 * cm, 3 * cm, 4 * cm)
+    table.setStyle(style)
+    flowables.append(table)
 
-    # Вставка фотографии, если путь к изображению предоставлен
-    if image_path is not None:
-        c.drawImage(image_path, 16 * cm, table_top - 1 * cm, 3 * cm, 4 * cm)
-
-    # Текст в нижней части страницы
-    c.setFont(font_name, 10)
-    c.drawString(2 * cm, 5 * cm, "Текст снизу страницы, который должен быть точно таким же, как на фото.")
-
-    # Сохраняем PDF
-    c.save()
+    # Сохранение PDF
+    pdf.build(flowables)
 
 
 # Пример данных и вызов функции

@@ -1,50 +1,27 @@
-from pprint import pprint
-
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfbase import pdfmetrics
-from reportlab.platypus import Table, TableStyle
-from reportlab.lib.units import cm
-from reportlab.pdfbase.ttfonts import TTFont
-from typing import List, Tuple, Optional
-
-from reportlab.platypus import SimpleDocTemplate
-
-font_name = 'Arial'
-
-# Регистрация шрифта с поддержкой кириллицы
-pdfmetrics.registerFont(TTFont(font_name, 'C:\\Windows\\Fonts\\ARIALN.TTF'))
+import pdfkit
+from pdfkit.configuration import Configuration
 
 
-def create_pdf(output_filename: str, personal_data: List[Tuple[str, str]], image_path: Optional[str] = None) -> None:
-    pdf = SimpleDocTemplate(output_filename, pagesize=A4)
-    flowables = []
+def html_to_pdf(html: str, output_filename: str, config: Configuration):
+    """
+    Преобразовать html в pdf
+    :param html: HTML код строкой (нужно, чтобы применить конфиг к pdfkit)
+    :param output_filename: путь к выходному файлу
+    :param config: конфиг pdfkit
+    :return:
+    """
+    # Настройки для pdfkit
+    options = {
+        'encoding': 'UTF-8',
+    }
 
-    table = Table(personal_data, colWidths=[4 * cm, 4 * cm, 4 * cm], rowHeights=2 * cm)
-
-    # Стилизация таблицы
-    style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, -1), font_name),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ])
-
-    table.setStyle(style)
-    flowables.append(table)
-
-    # Сохранение PDF
-    pdf.build(flowables)
+    pdfkit.from_string(html, output_filename, options=options, configuration=config)
 
 
-# Пример данных и вызов функции
-personal_info = [
-    ("Фамилия", "Иванов"),
-    ("Имя", "Иван"),
-    # Добавьте остальные данные
-]
+# Установка пути к wkhtmltopdf (путь до усполняемого файла в Windows это .exe)
+config = pdfkit.configuration(wkhtmltopdf="C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe")
 
-create_pdf("output.pdf", personal_info)
+with open('input.html', encoding='utf-8') as f:
+    input_html = f.read()
+
+    html_to_pdf(input_html, 'output.pdf', config)
